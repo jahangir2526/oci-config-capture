@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="980" viewBox="0 0 820 980" role="img" aria-labelledby="title desc">
+  <title id="title">OCI Config Capture popup sample layout</title>
+  <desc id="desc">Current popup layout showing captured OCI config fields, compact compartment tree, selected path, selected OCID, Copy All, and footer links.</desc>
+  <rect width="820" height="980" fill="#f6f7f9"/>
+  <rect x="215" y="28" width="390" height="924" rx="8" fill="#ffffff" stroke="#d9dee7"/>
+
+  <text x="239" y="64" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#1f2933">OCI Config Capture</text>
+  <text x="239" y="86" font-family="Arial, sans-serif" font-size="13" fill="#667085">Updated 10:42:18</text>
+  <rect x="518" y="46" width="64" height="34" rx="8" fill="#7a3f2a" stroke="#7a3f2a"/>
+  <text x="532" y="68" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#ffffff">Capture</text>
+
+  <rect x="239" y="108" width="342" height="284" rx="8" fill="#ffffff" stroke="#d9dee7"/>
+  <g font-family="Arial, sans-serif" font-size="13">
+    <text x="255" y="136" fill="#667085">Tenancy name</text>
+    <text x="380" y="136" font-weight="700" fill="#1f2933">example-tenancy</text>
+    <rect x="530" y="120" width="38" height="22" rx="6" fill="#f7eee9" stroke="#d9dee7"/>
+    <text x="538" y="135" font-size="11" font-weight="700" fill="#5d2f20">Copy</text>
+    <line x1="239" y1="154" x2="581" y2="154" stroke="#d9dee7"/>
+
+    <text x="255" y="182" fill="#667085">Tenancy OCID</text>
+    <text x="380" y="182" font-family="monospace" font-size="12" fill="#1f2933">ocid1.tenancy...</text>
+    <rect x="530" y="166" width="38" height="22" rx="6" fill="#f7eee9" stroke="#d9dee7"/>
+    <text x="538" y="181" font-size="11" font-weight="700" fill="#5d2f20">Copy</text>
+    <line x1="239" y1="200" x2="581" y2="200" stroke="#d9dee7"/>
+
+    <text x="255" y="228" fill="#667085">Identity Domain</text>
+    <text x="380" y="228" font-weight="700" fill="#1f2933">Default</text>
+    <rect x="530" y="212" width="38" height="22" rx="6" fill="#f7eee9" stroke="#d9dee7"/>
+    <text x="538" y="227" font-size="11" font-weight="700" fill="#5d2f20">Copy</text>
+    <line x1="239" y1="246" x2="581" y2="246" stroke="#d9dee7"/>
+
+    <text x="255" y="274" fill="#667085">Username</text>
+    <text x="380" y="274" font-weight="700" fill="#1f2933">user@example.com</text>
+    <rect x="530" y="258" width="38" height="22" rx="6" fill="#f7eee9" stroke="#d9dee7"/>
+    <text x="538" y="273" font-size="11" font-weight="700" fill="#5d2f20">Copy</text>
+    <line x1="239" y1="292" x2="581" y2="292" stroke="#d9dee7"/>
+
+    <text x="255" y="320" fill="#667085">User OCID</text>
+    <text x="380" y="320" font-family="monospace" font-size="12" fill="#1f2933">ocid1.user...</text>
+    <rect x="530" y="304" width="38" height="22" rx="6" fill="#f7eee9" stroke="#d9dee7"/>
+    <text x="538" y="319" font-size="11" font-weight="700" fill="#5d2f20">Copy</text>
+    <line x1="239" y1="338" x2="581" y2="338" stroke="#d9dee7"/>
+
+    <text x="255" y="366" fill="#667085">Current region</text>
+    <text x="380" y="366" font-weight="700" fill="#1f2933">ap-singapore-1</text>
+    <rect x="530" y="350" width="38" height="22" rx="6" fill="#f7eee9" stroke="#d9dee7"/>
+    <text x="538" y="365" font-size="11" font-weight="700" fill="#5d2f20">Copy</text>
+  </g>
+
+  <rect x="239" y="410" width="342" height="410" rx="8" fill="#ffffff" stroke="#d9dee7"/>
+  <text x="255" y="438" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#1f2933">Compartment Selector</text>
+  <rect x="540" y="421" width="28" height="20" rx="10" fill="#f2e7e1"/>
+  <text x="549" y="436" font-family="Arial, sans-serif" font-size="12" font-weight="700" fill="#5d2f20">8</text>
+
+  <rect x="255" y="454" width="310" height="34" rx="8" fill="#ffffff" stroke="#d9dee7"/>
+  <text x="269" y="476" font-family="Arial, sans-serif" font-size="13" fill="#667085">Search compartments</text>
+
+  <rect x="255" y="502" width="310" height="176" rx="2" fill="#ffffff" stroke="#b9d2dc"/>
+  <rect x="256" y="503" width="308" height="28" fill="#e4f4fb"/>
+  <text x="268" y="522" font-family="Arial, sans-serif" font-size="10" fill="#141414">▼</text>
+  <text x="292" y="522" font-family="Arial, sans-serif" font-size="13" fill="#202020">example-tenancy (root)</text>
+
+  <text x="288" y="550" font-family="Arial, sans-serif" font-size="10" fill="#141414">▼</text>
+  <text x="312" y="550" font-family="Arial, sans-serif" font-size="13" fill="#202020">Finance</text>
+
+  <text x="308" y="578" font-family="Arial, sans-serif" font-size="10" fill="#141414">▶</text>
+  <text x="332" y="578" font-family="Arial, sans-serif" font-size="13" fill="#202020">Payroll</text>
+
+  <text x="288" y="606" font-family="Arial, sans-serif" font-size="10" fill="#141414">▶</text>
+  <text x="312" y="606" font-family="Arial, sans-serif" font-size="13" fill="#202020">Shared Services</text>
+
+  <text x="288" y="634" font-family="Arial, sans-serif" font-size="10" fill="#141414">▶</text>
+  <text x="312" y="634" font-family="Arial, sans-serif" font-size="13" fill="#202020">Engineering</text>
+
+  <text x="288" y="662" font-family="Arial, sans-serif" font-size="10" fill="#141414">▶</text>
+  <text x="312" y="662" font-family="Arial, sans-serif" font-size="13" fill="#202020">Operations</text>
+
+  <text x="255" y="704" font-family="Arial, sans-serif" font-size="12" fill="#667085">Selected path</text>
+  <rect x="255" y="714" width="310" height="46" rx="6" fill="#f8fafc" stroke="#d9dee7"/>
+  <text x="263" y="742" font-family="monospace" font-size="11" fill="#1f2933">example-tenancy (root):Finance</text>
+
+  <text x="255" y="784" font-family="Arial, sans-serif" font-size="12" fill="#667085">Selected OCID</text>
+  <text x="255" y="804" font-family="monospace" font-size="11" fill="#1f2933">ocid1.compartment.oc1..aaaa...</text>
+  <rect x="530" y="788" width="38" height="22" rx="6" fill="#f7eee9" stroke="#d9dee7"/>
+  <text x="538" y="803" font-family="Arial, sans-serif" font-size="11" font-weight="700" fill="#5d2f20">Copy</text>
+
+  <rect x="239" y="838" width="342" height="34" rx="8" fill="#7a3f2a" stroke="#7a3f2a"/>
+  <text x="384" y="860" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#ffffff">Copy All</text>
+
+  <g font-family="Arial, sans-serif" font-size="12" fill="#667085">
+    <text x="363" y="900" font-weight="700">v1.0.0</text>
+    <text x="414" y="900">|</text>
+    <text x="434" y="900" font-weight="700" fill="#5d2f20">in</text>
+    <text x="458" y="900">|</text>
+    <circle cx="486" cy="896" r="7" fill="#5d2f20"/>
+    <text x="482" y="900" font-size="10" font-weight="700" fill="#ffffff">GH</text>
+  </g>
+</svg>
