@@ -64,7 +64,7 @@ async function capture() {
     initializeExpandedCompartments();
     renderCompartments();
     renderWarnings(response.warnings);
-    elements.statusText.textContent = `Updated ${new Date().toLocaleTimeString()}`;
+    elements.statusText.textContent = `Updated at ${new Date().toLocaleTimeString()}`;
   } catch (error) {
     showError(error?.message || "Unexpected error while collecting OCI session data.");
     resetSession();
