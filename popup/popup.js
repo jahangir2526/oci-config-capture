@@ -1,6 +1,7 @@
 const elements = {
   statusText: document.getElementById("statusText"),
   captureButton: document.getElementById("captureButton"),
+  profileButton: document.getElementById("profileButton"),
   copyAllButton: document.getElementById("copyAllButton"),
   errorPanel: document.getElementById("errorPanel"),
   warningsPanel: document.getElementById("warningsPanel"),
@@ -14,7 +15,16 @@ const elements = {
   compartmentList: document.getElementById("compartmentList"),
   compartmentCount: document.getElementById("compartmentCount"),
   selectedCompartmentPath: document.getElementById("selectedCompartmentPath"),
-  selectedCompartmentOcid: document.getElementById("selectedCompartmentOcid")
+  selectedCompartmentOcid: document.getElementById("selectedCompartmentOcid"),
+  profileDialog: document.getElementById("profileDialog"),
+  profileCloseButton: document.getElementById("profileCloseButton"),
+  profileName: document.getElementById("profileName"),
+  profileFingerprint: document.getElementById("profileFingerprint"),
+  profileKeyFile: document.getElementById("profileKeyFile"),
+  profileKeyBrowseButton: document.getElementById("profileKeyBrowseButton"),
+  profileKeyFilePicker: document.getElementById("profileKeyFilePicker"),
+  profileOutput: document.getElementById("profileOutput"),
+  profileCopyButton: document.getElementById("profileCopyButton")
 };
 
 const state = {
@@ -22,10 +32,19 @@ const state = {
   compartments: [],
   selectedCompartmentId: "",
   expandedCompartmentIds: new Set(),
-  isRefreshing: false
+  isRefreshing: false,
+  profileFingerprints: []
 };
 
 elements.captureButton.addEventListener("click", capture);
+elements.profileButton.addEventListener("click", openProfileDialog);
+elements.profileCloseButton.addEventListener("click", closeProfileDialog);
+elements.profileName.addEventListener("input", renderProfileOutput);
+elements.profileFingerprint.addEventListener("input", renderProfileOutput);
+elements.profileKeyFile.addEventListener("input", renderProfileOutput);
+elements.profileKeyBrowseButton.addEventListener("click", () => elements.profileKeyFilePicker.click());
+elements.profileKeyFilePicker.addEventListener("change", updateProfileKeyPathFromSelection);
+elements.profileCopyButton.addEventListener("click", copyProfile);
 elements.copyAllButton.addEventListener("click", copyAllFields);
 elements.compartmentSearch.addEventListener("input", renderCompartments);
 
@@ -34,6 +53,8 @@ document.querySelectorAll("[data-copy-target]").forEach((button) => {
 });
 
 updateCopyButtons();
+loadProfileFingerprints();
+updateProfileButton();
 
 async function capture() {
   if (state.isRefreshing) {
@@ -55,6 +76,7 @@ async function capture() {
 
     renderSession(response.session);
     state.session = response.session || {};
+    await rememberProfileFingerprints(state.session.apiKeyFingerprints);
     const previousSelection = state.selectedCompartmentId;
     state.compartments = response.compartments || [];
     const rootCompartmentId = state.session.tenancyOcid || "";
@@ -65,6 +87,7 @@ async function capture() {
     renderCompartments();
     renderWarnings(response.warnings);
     elements.statusText.textContent = `Updated at ${new Date().toLocaleTimeString()}`;
+    updateProfileButton();
   } catch (error) {
     showError(error?.message || "Unexpected error while collecting OCI session data.");
     resetSession();
@@ -77,6 +100,7 @@ async function capture() {
 function setLoading(isLoading) {
   elements.captureButton.disabled = isLoading;
   elements.captureButton.textContent = isLoading ? "Capturing..." : "Capture";
+  elements.profileButton.disabled = isLoading || !hasProfileSession();
   if (isLoading) {
     elements.statusText.textContent = "Reading active tab...";
   }
@@ -449,6 +473,183 @@ function resetSession() {
   state.expandedCompartmentIds.clear();
   renderCompartments();
   elements.statusText.textContent = "Click Capture to read the active OCI tab.";
+  closeProfileDialog();
+  updateProfileButton();
+}
+
+async function loadProfileFingerprints() {
+  try {
+    const result = await chrome.storage.local.get({ ociConfigFingerprints: [] });
+    const savedFingerprints = Array.isArray(result.ociConfigFingerprints)
+      ? result.ociConfigFingerprints.filter(Boolean)
+      : [];
+    state.profileFingerprints = mergeFingerprints(state.profileFingerprints, savedFingerprints);
+  } catch (_error) {
+    state.profileFingerprints = mergeFingerprints(state.profileFingerprints);
+  }
+  if (elements.profileDialog.open) {
+    populateFingerprintField();
+    renderProfileOutput();
+  }
+}
+
+async function rememberProfileFingerprints(fingerprints = []) {
+  const discovered = Array.isArray(fingerprints) ? fingerprints.filter(Boolean) : [];
+  if (!discovered.length) {
+    return;
+  }
+
+  state.profileFingerprints = mergeFingerprints(state.profileFingerprints, discovered);
+  try {
+    await chrome.storage.local.set({ ociConfigFingerprints: state.profileFingerprints });
+  } catch (_error) {
+    // Storage persistence is helpful for the dropdown, but profile generation still works without it.
+  }
+  if (elements.profileDialog.open) {
+    populateFingerprintField();
+    renderProfileOutput();
+  }
+}
+
+function mergeFingerprints(...fingerprintLists) {
+  return [
+    ...new Set(
+      fingerprintLists
+        .flat()
+        .filter(isValidFingerprint)
+        .map((fingerprint) => fingerprint.toLowerCase())
+    )
+  ].sort();
+}
+
+function isValidFingerprint(value) {
+  return /^(?:[a-f0-9]{2}:){15}[a-f0-9]{2}$/i.test(String(value || "").trim());
+}
+
+function updateProfileButton() {
+  elements.profileButton.disabled = state.isRefreshing || !hasProfileSession();
+}
+
+function hasProfileSession() {
+  return Boolean(state.session?.tenancyOcid && state.session?.userOcid);
+}
+
+function openProfileDialog() {
+  if (!hasProfileSession()) {
+    return;
+  }
+
+  renderProfileDialog();
+  if (typeof elements.profileDialog.showModal === "function") {
+    elements.profileDialog.showModal();
+  } else {
+    elements.profileDialog.removeAttribute("hidden");
+  }
+}
+
+function closeProfileDialog() {
+  if (elements.profileDialog.open) {
+    elements.profileDialog.close();
+  }
+  elements.profileDialog.setAttribute("hidden", "");
+}
+
+function renderProfileDialog() {
+  elements.profileDialog.removeAttribute("hidden");
+  elements.profileName.value = buildDefaultProfileName();
+  populateFingerprintField();
+  if (!elements.profileKeyFile.value) {
+    elements.profileKeyFile.value = "~/.oci/oci_api_key.pem";
+  }
+  renderProfileOutput();
+}
+
+function populateFingerprintField() {
+  if (elements.profileFingerprint.value.trim()) {
+    return;
+  }
+
+  const [fingerprint] = getAvailableFingerprints();
+  if (fingerprint) {
+    elements.profileFingerprint.value = fingerprint;
+  }
+}
+
+function getAvailableFingerprints() {
+  return mergeFingerprints(
+    Array.isArray(state.session.apiKeyFingerprints) ? state.session.apiKeyFingerprints : [],
+    state.profileFingerprints
+  );
+}
+
+function updateProfileKeyPathFromSelection() {
+  const file = elements.profileKeyFilePicker.files?.[0];
+  if (!file) {
+    return;
+  }
+
+  elements.profileKeyFile.value = `~/.oci/${file.name}`;
+  renderProfileOutput();
+}
+
+function renderProfileOutput() {
+  elements.profileOutput.value = buildProfileConfig();
+}
+
+function buildProfileConfig() {
+  const fingerprint = elements.profileFingerprint.value || "<select_fingerprint>";
+  const keyFile = elements.profileKeyFile.value.trim() || "~/.oci/oci_api_key.pem";
+  const region = state.session.region || "<region>";
+  return [
+    `[${getProfileName()}]`,
+    `user=${state.session.userOcid || ""}`,
+    `fingerprint=${fingerprint}`,
+    `key_file=${keyFile}`,
+    `tenancy=${state.session.tenancyOcid || ""}`,
+    `region=${region}`
+  ].join("\n");
+}
+
+function getProfileName() {
+  return elements.profileName.value.trim() || buildDefaultProfileName();
+}
+
+function buildDefaultProfileName() {
+  return [
+    state.session.tenancyName,
+    state.session.identityDomain,
+    state.session.username
+  ]
+    .map(formatProfileNamePart)
+    .filter(Boolean)
+    .join("_") || "oci_profile";
+}
+
+function formatProfileNamePart(value) {
+  return String(value || "")
+    .trim()
+    .replace(/@/g, "_at_")
+    .replace(/[^a-z0-9]+/gi, "_")
+    .replace(/^_+|_+$/g, "")
+    .toLowerCase();
+}
+
+async function copyProfile() {
+  const originalText = elements.profileCopyButton.textContent;
+  try {
+    await copyText(elements.profileOutput.value);
+    elements.profileOutput.focus();
+    elements.profileOutput.select();
+    elements.profileCopyButton.textContent = "Copied";
+    window.setTimeout(() => {
+      elements.profileCopyButton.textContent = originalText;
+    }, 1200);
+  } catch (_error) {
+    elements.profileCopyButton.textContent = "Failed";
+    window.setTimeout(() => {
+      elements.profileCopyButton.textContent = originalText;
+    }, 1200);
+  }
 }
 
 function setText(element, value) {
