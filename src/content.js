@@ -98,7 +98,10 @@
         username: cleanValue(session.username),
         userOcid: cleanValue(session.userOcid),
         region: cleanValue(session.region),
-        objectStorageNamespace: cleanValue(session.objectStorageNamespace)
+        objectStorageNamespace: cleanValue(session.objectStorageNamespace),
+        apiKeyFingerprints: Array.isArray(session.apiKeyFingerprints)
+          ? session.apiKeyFingerprints.map(cleanValue).filter(Boolean)
+          : []
       },
       compartments: compartments
         .filter((compartment) => compartment && compartment.id)

@@ -45,6 +45,7 @@
     readCookies(items);
     readWindowGlobals(items);
     readDocumentText(items);
+    readPerformanceRegionHints(items);
     await readIndexedDb(items);
     decodeJwtArtifacts(items);
     return items;
@@ -179,6 +180,7 @@
     if (bodyText) {
       items.push({ source: "document:bodyText", value: bodyText.slice(0, 250000) });
     }
+    readApiKeyTableText(items);
 
     const title = document.title || "";
     if (title) {
@@ -219,6 +221,62 @@
           }
         });
       }
+    }
+  }
+
+  function readApiKeyTableText(items) {
+    const pageText = document.body?.innerText || "";
+    if (!/api keys/i.test(pageText) || !/fingerprint/i.test(pageText)) {
+      return;
+    }
+
+    const fingerprints = new Set();
+    for (const row of Array.from(document.querySelectorAll("tr, [role='row']")).slice(0, 1000)) {
+      const rowText = row.innerText || row.textContent || "";
+      for (const fingerprint of extractFingerprintsFromText(rowText)) {
+        fingerprints.add(fingerprint);
+      }
+    }
+
+    if (!fingerprints.size) {
+      for (const fingerprint of extractFingerprintsFromText(pageText)) {
+        fingerprints.add(fingerprint);
+      }
+    }
+
+    if (fingerprints.size) {
+      items.push({
+        source: "document:apiKeysTable",
+        value: {
+          fingerprints: [...fingerprints].sort()
+        }
+      });
+    }
+  }
+
+  function extractFingerprintsFromText(text) {
+    const fingerprintPattern = /\b(?:[a-f0-9]{2}:){15}[a-f0-9]{2}\b/gi;
+    return [...new Set([...String(text || "").matchAll(fingerprintPattern)].map((match) => match[0].toLowerCase()))];
+  }
+
+  function readPerformanceRegionHints(items) {
+    if (!window.performance?.getEntriesByType) {
+      return;
+    }
+
+    const regionUrls = [];
+    for (const entry of window.performance.getEntriesByType("resource").slice(-500)) {
+      const name = String(entry.name || "");
+      if (extractRegionFromText(name)) {
+        regionUrls.push(name);
+      }
+    }
+
+    if (regionUrls.length) {
+      items.push({
+        source: "performance:regionUrls",
+        value: regionUrls.slice(0, 100)
+      });
     }
   }
 
@@ -383,11 +441,15 @@
       identityDomain,
       region:
         findRegion(textIndex) ||
+        extractRegionFromText(sourceUrl) ||
+        extractRegionFromText(textIndex.joined) ||
+        extractRegionDisplayNameFromText(textIndex.joined) ||
         regionFromPath ||
         regionFromHost,
       objectStorageNamespace:
         findObjectStorageNamespace(textIndex) ||
-        namespaceFromUrl
+        namespaceFromUrl,
+      apiKeyFingerprints: findApiKeyFingerprints(textIndex)
     };
 
     if (!session.objectStorageNamespace && session.tenancyName) {
@@ -396,6 +458,25 @@
     }
 
     return session;
+  }
+
+  function findApiKeyFingerprints(textIndex) {
+    const values = new Set();
+
+    const addMatches = (text) => {
+      for (const fingerprint of extractFingerprintsFromText(text)) {
+        values.add(fingerprint);
+      }
+    };
+
+    addMatches(textIndex.joined);
+    for (const entry of textIndex.flattened) {
+      if (/fingerprint|api.?key|public.?key/i.test(entry.path)) {
+        addMatches(entry.value);
+      }
+    }
+
+    return [...values].sort();
   }
 
   function findByKeys(textIndex, keys) {
@@ -752,32 +833,65 @@
       ams: "eu-amsterdam-1",
       arn: "eu-stockholm-1",
       auh: "me-abudhabi-1",
+      australiaeastsydney: "ap-sydney-1",
+      australiasoutheastmelbourne: "ap-melbourne-1",
       bog: "sa-bogota-1",
       bom: "ap-mumbai-1",
+      brazileastsaopaulo: "sa-saopaulo-1",
+      brazilsoutheastvinhedo: "sa-vinhedo-1",
+      canadacentralmontreal: "ca-montreal-1",
+      canadacentral: "ca-montreal-1",
+      canadasoutheasttoronto: "ca-toronto-1",
+      canadasoutheast: "ca-toronto-1",
       cdg: "eu-paris-1",
+      chilecentralsantiago: "sa-santiago-1",
+      colombiacentralbogota: "sa-bogota-1",
       dfw: "us-dallas-1",
       dxb: "me-dubai-1",
+      francecentralparis: "eu-paris-1",
       fra: "eu-frankfurt-1",
+      germanycentralfrankfurt: "eu-frankfurt-1",
       gru: "sa-saopaulo-1",
       hyd: "ap-hyderabad-1",
       iad: "us-ashburn-1",
       icn: "ap-seoul-1",
+      indiawestmumbai: "ap-mumbai-1",
+      indiasouthhyderabad: "ap-hyderabad-1",
+      israelcentraljerusalem: "il-jerusalem-1",
       jed: "me-jeddah-1",
       jnb: "af-johannesburg-1",
+      japancentralosaka: "ap-osaka-1",
+      japaneasttokyo: "ap-tokyo-1",
       kix: "ap-osaka-1",
       lhr: "uk-london-1",
       lin: "eu-milan-1",
       mel: "ap-melbourne-1",
+      mexicocentralqueretaro: "mx-queretaro-1",
       mrs: "eu-marseille-1",
       mtz: "mx-queretaro-1",
+      netherlandsnorthwestamsterdam: "eu-amsterdam-1",
       nrt: "ap-tokyo-1",
       phx: "us-phoenix-1",
       qro: "mx-queretaro-1",
       ruh: "me-riyadh-1",
+      saudiarabiawestjeddah: "me-jeddah-1",
       scl: "sa-santiago-1",
       sin: "ap-singapore-1",
+      singapore: "ap-singapore-1",
       sjc: "us-sanjose-1",
+      southafricacentraljohannesburg: "af-johannesburg-1",
+      southkoreacentral: "ap-seoul-1",
+      southkoreacentralseoul: "ap-seoul-1",
+      southkoreanorthchuncheon: "ap-chuncheon-1",
       syd: "ap-sydney-1",
+      swedencentralstockholm: "eu-stockholm-1",
+      switzerlandnorthzurich: "eu-zurich-1",
+      uaeeastdubai: "me-dubai-1",
+      uaeedubai: "me-dubai-1",
+      uknorthnewport: "uk-cardiff-1",
+      uksouthlondon: "uk-london-1",
+      useastashburn: "us-ashburn-1",
+      uswestphoenix: "us-phoenix-1",
       vcp: "sa-vinhedo-1",
       yul: "ca-montreal-1",
       yyz: "ca-toronto-1",
@@ -885,6 +999,69 @@
   function extractRegionFromPath(pathname) {
     const match = pathname.match(/regions\/([a-z]+-[a-z]+-\d+)/i);
     return match?.[1] || "";
+  }
+
+  function extractRegionFromText(text) {
+    const value = String(text || "");
+    const patterns = [
+      /\b[a-z0-9-]+\.([a-z]+-[a-z]+-\d+)\.(?:oci\.)?oraclecloud\.com\b/i,
+      /[?&](?:region|regionId|regionIdentifier)=([a-z]+-[a-z]+-\d+)/i,
+      /\/regions\/([a-z]+-[a-z]+-\d+)/i,
+      /"region"\s*:\s*"([a-z]+-[a-z]+-\d+)"/i,
+      /"regionId"\s*:\s*"([a-z]+-[a-z]+-\d+)"/i
+    ];
+
+    for (const pattern of patterns) {
+      const match = value.match(pattern);
+      const region = normalizeRegion(match?.[1] || "");
+      if (region) {
+        return region;
+      }
+    }
+
+    return "";
+  }
+
+  function extractRegionDisplayNameFromText(text) {
+    const compact = String(text || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    const displayNames = {
+      australiaeastsydney: "ap-sydney-1",
+      australiasoutheastmelbourne: "ap-melbourne-1",
+      brazileastsaopaulo: "sa-saopaulo-1",
+      brazilsoutheastvinhedo: "sa-vinhedo-1",
+      canadacentralmontreal: "ca-montreal-1",
+      canadasoutheasttoronto: "ca-toronto-1",
+      chilecentralsantiago: "sa-santiago-1",
+      colombiacentralbogota: "sa-bogota-1",
+      francecentralparis: "eu-paris-1",
+      germanycentralfrankfurt: "eu-frankfurt-1",
+      indiawestmumbai: "ap-mumbai-1",
+      indiasouthhyderabad: "ap-hyderabad-1",
+      israelcentraljerusalem: "il-jerusalem-1",
+      japancentralosaka: "ap-osaka-1",
+      japaneasttokyo: "ap-tokyo-1",
+      mexicocentralqueretaro: "mx-queretaro-1",
+      netherlandsnorthwestamsterdam: "eu-amsterdam-1",
+      saudiarabiawestjeddah: "me-jeddah-1",
+      southafricacentraljohannesburg: "af-johannesburg-1",
+      southkoreacentralseoul: "ap-seoul-1",
+      southkoreanorthchuncheon: "ap-chuncheon-1",
+      swedencentralstockholm: "eu-stockholm-1",
+      switzerlandnorthzurich: "eu-zurich-1",
+      uaeeastdubai: "me-dubai-1",
+      uknorthnewport: "uk-cardiff-1",
+      uksouthlondon: "uk-london-1",
+      useastashburn: "us-ashburn-1",
+      uswestphoenix: "us-phoenix-1"
+    };
+
+    for (const [name, region] of Object.entries(displayNames)) {
+      if (compact.includes(name)) {
+        return region;
+      }
+    }
+
+    return "";
   }
 
   function extractNamespaceFromText(text) {
