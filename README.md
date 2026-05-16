@@ -7,7 +7,9 @@ The extension is designed for quick inspection of the signed-in OCI Console cont
 ## Features
 
 - Manual **Capture** button for reading the active OCI Console tab on demand
+- Capture status text that shows the latest refresh as **Updated at `<time>`**
 - Clean popup UI with copy buttons for every captured value
+- Red and blue cloud quick-picker extension icon for quick browser recognition
 - OCI Console session detection and error handling
 - Tenancy and identity-domain user details from the active browser session
 - Current region detection, including OCI short-region code normalization
@@ -46,6 +48,36 @@ The compartment selector displays compartment names in a compact hierarchy. The 
 8. Click **Capture** to read the active OCI Console tab.
 
 No build step is required.
+
+## Distribution Package
+
+This is a static Manifest V3 extension, so the deployable package is a ZIP archive of the extension runtime files.
+
+The current package name is:
+
+```text
+dist/oci-config-capture-0.1.0.zip
+```
+
+The ZIP should include:
+
+```text
+manifest.json
+popup/
+src/
+icons/
+LICENSE
+README.md
+```
+
+It should not include `.git/`, generated image drafts, local development files, or unrelated repository metadata.
+
+To rebuild the package from the repository root:
+
+```bash
+mkdir -p dist
+zip -r dist/oci-config-capture-0.1.0.zip manifest.json popup src icons LICENSE README.md
+```
 
 ## Usage
 
@@ -96,6 +128,26 @@ icons/                 Extension icons
 The sample below reflects the current popup: ordered session fields, copy buttons, compact expandable compartment tree, selected path, selected OCID, Copy All, and footer links.
 
 ![Sample popup UI](docs/sample-ui.svg)
+
+## Extension Icon
+
+The extension icon uses a red and blue cloud quick-picker concept:
+
+- red outer badge for visibility in the Chrome toolbar
+- blue cloud center for cloud-console context
+- configuration rows for captured settings
+- check target and cursor for quick picker/capture behavior
+
+Chrome uses the PNG icon assets declared in `manifest.json`:
+
+```text
+icons/icon-16.png
+icons/icon-32.png
+icons/icon-48.png
+icons/icon-128.png
+```
+
+The editable source icon is `icons/icon.svg`.
 
 ## Privacy and Data Handling
 
