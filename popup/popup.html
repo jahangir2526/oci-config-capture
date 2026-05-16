@@ -9,9 +9,12 @@
   <body>
     <main class="shell">
       <header class="header">
-        <div>
-          <h1>OCI Config Capture</h1>
-          <p id="statusText">Click Capture to read the active OCI tab.</p>
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">OCI</div>
+          <div>
+            <h1>Config Capture</h1>
+            <p id="statusText">Click Capture to read the active OCI tab.</p>
+          </div>
         </div>
         <div class="header-actions">
           <button id="profileButton" class="secondary-button" type="button" disabled>
@@ -26,6 +29,10 @@
       <section id="errorPanel" class="notice hidden" role="status"></section>
 
       <section id="sessionPanel" class="panel">
+        <div class="panel-heading">
+          <h2>Session details</h2>
+          <span>SDK/CLI ready</span>
+        </div>
         <dl class="fields">
           <div>
             <dt>Tenancy name</dt>

@@ -2,17 +2,25 @@
 
 A lightweight Manifest V3 Chrome extension that captures key details from the currently active Oracle Cloud Infrastructure (OCI) Console session and displays them in a compact popup.
 
-The extension is designed for quick inspection of the signed-in OCI Console context: tenancy, identity domain, user, region, and accessible compartments.
+The extension is designed for quick inspection of the signed-in OCI Console context: tenancy, identity domain, user, region, accessible compartments, and SDK/CLI profile configuration.
 
 ## Features
 
 - Manual **Capture** button for reading the active OCI Console tab on demand
 - Capture status text that shows the latest refresh as **Updated at `<time>`**
-- Clean popup UI with copy buttons for every captured value
+- Refreshed popup UI with a compact brand mark, **Profile** action, session readiness badge, and copy buttons for captured values
 - Red and blue cloud quick-picker extension icon for quick browser recognition
 - OCI Console session detection and error handling
 - Tenancy and identity-domain user details from the active browser session
-- Current region detection, including OCI short-region code normalization
+- Current region detection from storage, URL/path hints, OCI service URLs loaded by the Console, visible selected-region display names, and OCI short-region code normalization
+- **Profile** button that enables after a successful capture with user and tenancy OCIDs
+- SDK/CLI config profile dialog with:
+  - editable profile name
+  - editable fingerprint field for API key fingerprints
+  - private key path input with file browse helper
+  - generated OCI config profile output
+  - **Copy Profile** button
+- API key fingerprint capture from visible **Identity > My profile > Tokens and keys > API keys** pages when fingerprints are present in the active Console view
 - **Copy All** button that copies captured values in `key: value` format
 - Compartment selector with:
   - accessible compartment retrieval from OCI Console/API/cache data
@@ -36,6 +44,19 @@ The session panel displays fields in this order:
 
 The compartment selector displays compartment names in a compact hierarchy. The selected compartment path and selected compartment OCID appear below the tree.
 
+After a successful capture, the **Profile** button opens an SDK/CLI profile generator. The generated profile follows OCI config file format:
+
+```ini
+[profile_name]
+user=ocid1.user...
+fingerprint=91:65:08:74:73:0f:c8:fd:61:8d:1f:75:47:bf:17:da
+key_file=/Users/example/.oci/oci_api_key.pem
+tenancy=ocid1.tenancy...
+region=us-ashburn-1
+```
+
+The profile name and fingerprint are editable, so values can be corrected or pasted before copying the final profile.
+
 ## Install as an Unpacked Extension
 
 1. Clone or download this repository.
@@ -46,6 +67,7 @@ The compartment selector displays compartment names in a compact hierarchy. The 
 6. Open an OCI Console tab and sign in.
 7. Click the **OCI Config Capture** extension icon.
 8. Click **Capture** to read the active OCI Console tab.
+9. Click **Profile** to generate an OCI SDK/CLI config profile from the captured tenancy, user, region, fingerprint, and private key path.
 
 No build step is required.
 
@@ -66,6 +88,7 @@ manifest.json
 popup/
 src/
 icons/
+docs/
 LICENSE
 README.md
 ```
@@ -76,7 +99,7 @@ To rebuild the package from the repository root:
 
 ```bash
 mkdir -p dist
-zip -r dist/oci-config-capture-0.1.0.zip manifest.json popup src icons LICENSE README.md
+zip -r dist/oci-config-capture-0.1.0.zip manifest.json popup src icons docs LICENSE README.md
 ```
 
 ## Usage
@@ -85,10 +108,13 @@ zip -r dist/oci-config-capture-0.1.0.zip manifest.json popup src icons LICENSE R
 2. Open the extension popup.
 3. Click **Capture**.
 4. Use **Copy** next to any field to copy its value.
-5. Use the compartment tree to expand/collapse parent compartments.
-6. Select a compartment to show its root-to-selection path in **Selected path** and its OCID in **Selected OCID**.
-7. Use the search box to filter compartments; matching children remain visible with their parent path.
-8. Use **Copy All** to copy the visible captured values in `key: value` format.
+5. Use **Profile** after capture to open the SDK/CLI profile generator.
+6. Edit the profile name, paste or select the API key fingerprint, and set the private key path.
+7. Use **Copy Profile** to copy the generated OCI config profile.
+8. Use the compartment tree to expand/collapse parent compartments.
+9. Select a compartment to show its root-to-selection path in **Selected path** and its OCID in **Selected OCID**.
+10. Use the search box to filter compartments; matching children remain visible with their parent path.
+11. Use **Copy All** to copy the visible captured values in `key: value` format.
 
 ## How It Works
 
@@ -101,9 +127,15 @@ The page probe runs in the OCI Console page context and gathers session hints fr
 - decoded JWT payloads from the active identity-domain session
 - selected page-level globals when present
 - visible Console text and bootstrap script data as fallbacks
+- selected-region display text and OCI service/resource URLs loaded by the Console
+- visible API key fingerprint rows on OCI **Tokens and keys** pages
 - optional same-session OCI Console/API endpoint probes when available
 
 Username and User OCID are prioritized from the active Identity Domain session/principal data. The extension avoids treating groups, policies, roles, and other IAM metadata as the connected user.
+
+Region extraction prefers explicit OCI region IDs, then falls back to region URL/path hints, service endpoint hostnames, and known Console display names such as `South Korea Central (Seoul)` mapping to `ap-seoul-1`.
+
+API key fingerprints are captured only when the current visible Console page exposes fingerprint text. The profile dialog also allows manual fingerprint entry because OCI fingerprints are generated after adding an API key.
 
 For compartments, the extension uses the tenancy OCID from the active session and attempts OCI Identity compartment data with `accessLevel=ACCESSIBLE` and `compartmentIdInSubtree=true`. If a live API request is unavailable, it falls back to cached OCI Console compartment records from IndexedDB. Parent IDs and cached path data are used to build the tree hierarchy.
 
@@ -118,16 +150,30 @@ src/content.js         Isolated-world bridge and response normalization
 src/page-probe.js      OCI session, user, and compartment extraction
 popup/popup.html       Popup markup
 popup/popup.css        Popup styling
-popup/popup.js         Popup state, copy buttons, and compartment tree logic
-docs/sample-ui.svg     Example popup layout
+popup/popup.js         Popup state, copy buttons, compartment tree, and profile generator logic
+docs/sample-ui.svg     Example popup and profile-dialog layout
 icons/                 Extension icons
+dist/promo/            Generated screenshots and promo video assets
 ```
 
 ## Popup Layout
 
-The sample below reflects the current popup: ordered session fields, copy buttons, compact expandable compartment tree, selected path, selected OCID, Copy All, and footer links.
+The sample below reflects the current popup and SDK/CLI profile dialog: branded header, Profile/Capture actions, ordered session fields, readiness badge, copy buttons, compact expandable compartment tree, selected path, selected OCID, generated profile output, and copy actions.
 
 ![Sample popup UI](docs/sample-ui.svg)
+
+## Promo Assets
+
+The current promo assets include an updated 30-second video with an original generated audio bed and three 1280x800 JPEG screenshots:
+
+```text
+dist/promo/oci-config-capture-promo-30s.gif
+dist/promo/oci-config-capture-promo-30s.mp4
+dist/promo/oci-config-capture-promo-30s.webm
+dist/promo/oci-config-capture-main-popup-1280x800.jpg
+dist/promo/oci-config-capture-profile-dialog-1280x800.jpg
+dist/promo/oci-config-capture-profile-workflow-1280x800.jpg
+```
 
 ## Extension Icon
 
@@ -153,6 +199,7 @@ The editable source icon is `icons/icon.svg`.
 
 - The extension only reads the active tab when you click **Capture**.
 - Captured values stay local to the browser extension popup.
+- Recently captured API key fingerprints may be stored in local Chrome extension storage to make profile generation easier.
 - The project does not send OCI data to any external service.
 - If the active tab is not OCI Console, or session data cannot be read, the popup shows an error instead of failing silently.
 
